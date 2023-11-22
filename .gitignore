@@ -1,0 +1,33 @@
+# Compiled binary
+*.exe
+*.out
+*.dll
+*.so
+*.dylib
+
+# Temporary files
+*.log
+*.test
+
+# Output of `go test`
+*.test
+
+# Dependency directories
+/vendor/
+/go.sum
+
+# Compiled Go code
+*.a
+*.o
+
+# Output directories
+/bin/
+/pkg/
+
+# IDE-specific files
+.idea/
+.vscode/
+
+# OS-specific files
+Thumbs.db
+.DS_Store

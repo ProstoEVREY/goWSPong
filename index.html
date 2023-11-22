@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Pong Game</title>
+    <style>
+        canvas {
+            border: 3px solid #000;
+            display: block;
+            margin: 20px auto;
+        }
+        .header{
+            display: flex;
+            justify-content: center;
+        }
+        .score1 {
+            margin-left: 100px;
+            display: inline;
+        }
+        .score2 {
+            margin-right: 100px;
+            display: flex;
+            justify-content: flex-end;
+        }
+    </style>
+</head>
+<body>
+<div>
+    <h1 class="header">Websocket Pong</h1>
+    <h1 class="score1">Score: </h1>
+    <h1 class="score2">Score: </h1>
+</div>
+
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+
+<script>
+    let playerOne = {
+        x:20,
+        y:250,
+        width:15,
+        height:100
+    }
+    let playerTwo = {
+        x:770,
+        y:250,
+        width:15,
+        height:100
+    }
+
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.fillRect(playerOne.x, playerOne.y,playerOne.width, playerOne.height);
+    ctx.fillRect(playerTwo.x, playerTwo.y, playerTwo.width, playerTwo.height);
+
+    const socket = new WebSocket('ws://localhost:8080/ws');
+
+    socket.addEventListener('open', (event) => {
+        console.log('WebSocket connection opened:', event);
+    });
+
+    socket.addEventListener('message', (event) => {
+        const data = JSON.parse(event.data);
+        console.log('Received message from server:', data);
+
+        // Clear the canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if(data.player1Y > 0 && data.player1Y < canvas.height - 100 ) {
+            ctx.fillRect(playerOne.x, data.player1Y, playerOne.width, playerOne.height);  // Left paddle
+        }
+        else if(data.player1Y < 10) {
+            ctx.fillRect(playerOne.x, 0, playerOne.width, playerOne.height);  // Left paddle
+        }
+        else {
+            ctx.fillRect(playerOne.x, 500, playerOne.width, playerOne.height);
+        }
+
+        if(data.player2Y < canvas.width - 50 && data.player2Y > 50) {
+            ctx.fillRect(playerTwo.x, data.player2Y, playerTwo.width, playerTwo.height);  // Left paddle
+        }
+        else if(data.player2Y < 10) {
+            ctx.fillRect(playerTwo.x, 0, playerTwo.width, playerTwo.height);  // Left paddle
+        }
+        else {
+            ctx.fillRect(playerTwo.x, 500, playerTwo.width, playerTwo.height);
+        }
+    });
+
+    socket.addEventListener('close', (event) => {
+        console.log('WebSocket connection closed:', event);
+    });
+
+    // Handle user input (e.g., moving the paddle)
+    document.addEventListener('keydown', (event) => {
+        const keyCode = event.keyCode;
+        // For simplicity, let's assume 'W' and 'S' keys control the left paddle
+        if (keyCode === 87) {  // W key
+            // Send a message to the server indicating the desired action
+            socket.send(JSON.stringify({ action: 'moveUp' }));
+
+        } else if (keyCode === 83) {  // S key
+            socket.send(JSON.stringify({ action: 'moveDown' }));
+        }
+    });
+</script>
+</body>
+</html>
