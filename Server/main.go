@@ -88,12 +88,12 @@ func (gs *GameServer) handleConnection(w http.ResponseWriter, r *http.Request) {
 		// New: Update player position based on client action
 		switch actionMessage["action"] {
 		case "moveUp":
-			player.positionY -= 10
+			player.positionY -= 20
 			if player.positionY < 0 {
 				player.positionY = 0
 			}
 		case "moveDown":
-			player.positionY += 10
+			player.positionY += 20
 			if player.positionY > 500 {
 				player.positionY = 500
 			}

@@ -5,23 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebSocket Pong Game</title>
     <style>
+        body {
+            background-color: black;
+        }
         canvas {
-            border: 3px solid #000;
+            border: 3px solid #FFF;
             display: block;
             margin: 20px auto;
         }
         .header{
             display: flex;
             justify-content: center;
+            color: #FFFFFF;
         }
         .score1 {
             margin-left: 100px;
             display: inline;
+            color: #FFFFFF;
         }
         .score2 {
             margin-right: 100px;
             display: flex;
             justify-content: flex-end;
+            color: #FFFFFF;
         }
     </style>
 </head>
@@ -63,6 +69,8 @@
         const data = JSON.parse(event.data);
         console.log('Received message from server:', data);
 
+        ctx.fillStyle = 'white';
+
         // Clear the canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if(data.player1Y > 0 && data.player1Y < canvas.height - 100 ) {
@@ -75,7 +83,7 @@
             ctx.fillRect(playerOne.x, 500, playerOne.width, playerOne.height);
         }
 
-        if(data.player2Y < canvas.width - 50 && data.player2Y > 50) {
+        if(data.player2Y < canvas.width - 50 && data.player2Y > 0) {
             ctx.fillRect(playerTwo.x, data.player2Y, playerTwo.width, playerTwo.height);  // Left paddle
         }
         else if(data.player2Y < 10) {
