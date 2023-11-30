@@ -23,6 +23,14 @@ type GameServer struct {
 	mutex        sync.Mutex
 	upgrader     websocket.Upgrader
 	canvasHeight int
+	canvasWidth  int
+	ball         Ball
+}
+
+type Ball struct {
+	X, Y      int
+	VelocityX int
+	VelocityY int
 }
 
 func (gs *GameServer) run() {
@@ -43,7 +51,35 @@ func (gs *GameServer) run() {
 			}
 			gs.mutex.Unlock()
 		}
+		//gs.ball.X += gs.ball.VelocityX
+		//gs.ball.Y += gs.ball.VelocityY
+		//
+		//// Check ball collisions with paddles
+		//gs.checkPaddleCollision()
+		//gs.broadcast <- gs.serializeGameState()
 	}
+}
+
+func (gs *GameServer) checkPaddleCollision() {
+	var players []Player
+	for player := range gs.players {
+		players = append(players, *player)
+	}
+
+	if gs.ball.X-10 <= 20 && gs.ball.Y >= players[0].positionY && gs.ball.Y <= players[0].positionY+100 {
+		gs.ball.VelocityX = -gs.ball.VelocityX
+	}
+
+	// Check collision with right paddle
+	if gs.ball.X+10 >= gs.canvasWidth-20 && gs.ball.Y >= players[1].positionY && gs.ball.Y <= players[1].positionY+100 {
+		gs.ball.VelocityX = -gs.ball.VelocityX
+	}
+
+	// Check collision with top and bottom walls
+	if gs.ball.Y-10 <= 0 || gs.ball.Y+10 >= gs.canvasHeight {
+		gs.ball.VelocityY = -gs.ball.VelocityY
+	}
+
 }
 
 func (gs *GameServer) handleConnection(w http.ResponseWriter, r *http.Request) {
@@ -117,6 +153,9 @@ func (gs *GameServer) serializeGameState() []byte {
 		gameState[insert] = player.positionY
 	}
 
+	gameState["ballX"] = gs.ball.X
+	gameState["ballY"] = gs.ball.Y
+
 	jsonData, err := json.Marshal(gameState)
 	if err != nil {
 		log.Println("Error encoding JSON:", err)
@@ -131,11 +170,18 @@ func main() {
 	gs := &GameServer{
 		players:      make(map[*Player]bool),
 		canvasHeight: 600,
+		canvasWidth:  800,
 		broadcast:    make(chan []byte),
 		upgrader: websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool {
 				return true
 			},
+		},
+		ball: Ball{
+			X:         800 / 2,
+			Y:         600 / 2,
+			VelocityX: 5,
+			VelocityY: 5,
 		},
 	}
 

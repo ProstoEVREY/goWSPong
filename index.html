@@ -92,6 +92,12 @@
         else {
             ctx.fillRect(playerTwo.x, 500, playerTwo.width, playerTwo.height);
         }
+
+        ctx.beginPath();
+        ctx.arc(data.ballX, data.ballY, 10, 0, 2 * Math.PI);
+        ctx.fillStyle = '#FFF';
+        ctx.fill();
+        ctx.closePath();
     });
 
     socket.addEventListener('close', (event) => {
