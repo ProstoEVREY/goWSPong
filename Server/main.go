@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
+	"time"
 )
 
 // Player represents a connected player.
@@ -18,7 +19,7 @@ type Player struct {
 
 // GameServer represents the game server.
 type GameServer struct {
-	players      map[*Player]bool
+	players      map[int]Player
 	broadcast    chan []byte
 	mutex        sync.Mutex
 	upgrader     websocket.Upgrader
@@ -35,49 +36,47 @@ type Ball struct {
 
 func (gs *GameServer) run() {
 	for {
-		select {
-		case message := <-gs.broadcast:
-			gs.mutex.Lock()
-			for player := range gs.players {
-				err := player.conn.WriteMessage(websocket.TextMessage, message)
+		message := <-gs.broadcast
+		gs.mutex.Lock()
+		for index, player := range gs.players {
+			err := player.conn.WriteMessage(websocket.TextMessage, message)
+			if err != nil {
+				log.Println("Error writing to player:", err)
+				err := player.conn.Close()
 				if err != nil {
-					log.Println("Error writing to player:", err)
-					err := player.conn.Close()
-					if err != nil {
-						return
-					}
-					delete(gs.players, player)
+					return
 				}
+				delete(gs.players, index)
 			}
-			gs.mutex.Unlock()
 		}
-		//gs.ball.X += gs.ball.VelocityX
-		//gs.ball.Y += gs.ball.VelocityY
-		//
-		//// Check ball collisions with paddles
-		//gs.checkPaddleCollision()
-		//gs.broadcast <- gs.serializeGameState()
+		gs.mutex.Unlock()
+	}
+}
+
+func (gs *GameServer) controlBall() {
+	for {
+		gs.ball.X += gs.ball.VelocityX
+		gs.ball.Y += gs.ball.VelocityY
+
+		gs.checkPaddleCollision()
+
+		time.Sleep(300 * time.Millisecond)
 	}
 }
 
 func (gs *GameServer) checkPaddleCollision() {
-	var players []Player
-	for player := range gs.players {
-		players = append(players, *player)
-	}
+	for _, player := range gs.players {
 
-	if gs.ball.X-10 <= 20 && gs.ball.Y >= players[0].positionY && gs.ball.Y <= players[0].positionY+100 {
-		gs.ball.VelocityX = -gs.ball.VelocityX
-	}
+		if (gs.ball.X-10 <= 35 || gs.ball.X+10 >= gs.canvasWidth-35) && gs.ball.Y >= player.positionY && gs.ball.Y <= player.positionY+100 {
+			gs.ball.VelocityX = -gs.ball.VelocityX
+		}
+		if gs.ball.Y-10 <= 0 || gs.ball.Y+10 >= gs.canvasHeight {
+			gs.ball.VelocityY = -gs.ball.VelocityY
+		}
 
-	// Check collision with right paddle
-	if gs.ball.X+10 >= gs.canvasWidth-20 && gs.ball.Y >= players[1].positionY && gs.ball.Y <= players[1].positionY+100 {
-		gs.ball.VelocityX = -gs.ball.VelocityX
-	}
-
-	// Check collision with top and bottom walls
-	if gs.ball.Y-10 <= 0 || gs.ball.Y+10 >= gs.canvasHeight {
-		gs.ball.VelocityY = -gs.ball.VelocityY
+		if gs.ball.X-10 <= 0 || gs.ball.X+10 >= gs.canvasWidth {
+			gs.ball.VelocityX = -gs.ball.VelocityX
+		}
 	}
 
 }
@@ -94,15 +93,16 @@ func (gs *GameServer) handleConnection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	player := &Player{conn: conn, positionY: 250, id: len(gs.players) + 1}
-
+	index := 0
 	if len(gs.players) == 0 {
 		log.Println("Player 1 connected.")
 	} else {
+		index = 1
 		log.Println("Player 2 connected.")
 	}
 
 	gs.mutex.Lock()
-	gs.players[player] = true
+	gs.players[index] = *player
 	gs.mutex.Unlock()
 
 	for {
@@ -110,7 +110,7 @@ func (gs *GameServer) handleConnection(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Println("Player disconnected:", err)
 			gs.mutex.Lock()
-			delete(gs.players, player)
+			delete(gs.players, index)
 			gs.mutex.Unlock()
 			break
 		}
@@ -142,13 +142,13 @@ func (gs *GameServer) handleConnection(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// New: serializeGameState function to convert game state to JSON
 func (gs *GameServer) serializeGameState() []byte {
 	gs.mutex.Lock()
 	defer gs.mutex.Unlock()
 
 	gameState := make(map[string]int)
-	for player := range gs.players {
+
+	for _, player := range gs.players {
 		insert := "player" + strconv.Itoa(player.id) + "Y"
 		gameState[insert] = player.positionY
 	}
@@ -168,7 +168,7 @@ func (gs *GameServer) serializeGameState() []byte {
 func main() {
 
 	gs := &GameServer{
-		players:      make(map[*Player]bool),
+		players:      make(map[int]Player),
 		canvasHeight: 600,
 		canvasWidth:  800,
 		broadcast:    make(chan []byte),
@@ -178,14 +178,27 @@ func main() {
 			},
 		},
 		ball: Ball{
-			X:         800 / 2,
-			Y:         600 / 2,
+			X:         400,
+			Y:         300,
 			VelocityX: 5,
 			VelocityY: 5,
 		},
 	}
 
+	initialState := map[string]int{
+		"ballX": 400,
+		"ballY": 300,
+	}
+
+	_, err := json.Marshal(initialState)
+	if err != nil {
+		log.Println("Error encoding JSON:", err)
+	}
+
+	// gs.broadcast <- jsonData
+
 	go gs.run()
+	go gs.controlBall()
 
 	http.HandleFunc("/ws", gs.handleConnection)
 
