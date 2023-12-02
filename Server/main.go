@@ -152,8 +152,6 @@ func (gs *GameServer) handleConnection(w http.ResponseWriter, r *http.Request) {
 			// Handle stopping player movement
 		}
 
-		println(player.positionY)
-
 		// Broadcast updated player positions to all clients
 		gs.broadcast <- gs.serializeGameState()
 	}
