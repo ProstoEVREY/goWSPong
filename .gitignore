@@ -5,6 +5,8 @@
 *.so
 *.dylib
 
+/Server/Server
+
 # Temporary files
 *.log
 *.test
