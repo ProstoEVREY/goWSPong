@@ -6,4 +6,5 @@
 
 <b>(WIP)</b>
 
-<img width="1440" alt="image" src="https://github.com/ProstoEVREY/goWSPong/assets/81341652/a0078c45-5d3e-4164-bf1d-4353bb3c670b">
+![telegram-cloud-photo-size-2-5429380936581108773-y](https://github.com/ProstoEVREY/goWSPong/assets/81341652/ad461662-6165-4fef-b4f6-03fdddaf0cd2)
+
