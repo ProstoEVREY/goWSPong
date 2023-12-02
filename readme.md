@@ -5,3 +5,5 @@
 
 
 <b>(WIP)</b>
+
+<img width="1440" alt="image" src="https://github.com/ProstoEVREY/goWSPong/assets/81341652/a0078c45-5d3e-4164-bf1d-4353bb3c670b">
