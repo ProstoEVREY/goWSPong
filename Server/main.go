@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gorilla/websocket"
 	"log"
+	"math/rand"
 	"net/http"
 	"strconv"
 	"sync"
@@ -27,12 +28,32 @@ type GameServer struct {
 	canvasHeight int
 	canvasWidth  int
 	ball         Ball
+	scoreOne     int
+	scoreTwo     int
 }
 
 type Ball struct {
 	X, Y      int
 	VelocityX int
 	VelocityY int
+}
+
+func getRandomDirection(speed int) int {
+	// Return either -1 or 1 randomly to set the direction.
+	if rand.Intn(2) == 0 {
+		return -speed
+	}
+	return speed
+}
+
+func getRandomSpeed(min, max int) int {
+	speed := rand.Intn(max-min+1) + min
+	return getRandomDirection(speed)
+}
+
+func getRandomheight(min, max int) int {
+	rand.Seed(time.Now().UnixNano())
+	return rand.Intn(max-min+1) + min
 }
 
 func (gs *GameServer) run() {
@@ -58,15 +79,29 @@ func (gs *GameServer) run() {
 
 func (gs *GameServer) controlBall() {
 	for {
-		time.Sleep(10 * time.Millisecond)
+		time.Sleep(15 * time.Millisecond)
 
-		gs.ball.X += gs.ball.VelocityX
-		gs.ball.Y += gs.ball.VelocityY
+		gs.mutex.Lock()
+		if len(gs.players) >= 2 {
+			gs.ball.X += gs.ball.VelocityX
+			gs.ball.Y += gs.ball.VelocityY
+		}
+		gs.mutex.Unlock()
 
 		gs.checkPaddleCollision()
 
 		gs.broadcast <- gs.serializeGameState()
 
+	}
+}
+
+func (gs *GameServer) Replay(player int) {
+	gs.ball.X = 400
+	gs.ball.Y = getRandomheight(50, 550)
+	if player == 0 {
+		gs.scoreOne += 1
+	} else {
+		gs.scoreTwo += 1
 	}
 }
 
@@ -91,8 +126,12 @@ func (gs *GameServer) checkPaddleCollision() {
 		gs.ball.VelocityY = -gs.ball.VelocityY
 	}
 
-	if gs.ball.X-10 <= 0 || gs.ball.X+10 >= gs.canvasWidth {
-		gs.ball.VelocityX = -gs.ball.VelocityX
+	if gs.ball.X-10 <= 0 {
+		gs.Replay(1)
+	}
+
+	if gs.ball.X+10 >= 800 {
+		gs.Replay(0)
 	}
 
 }
@@ -139,17 +178,15 @@ func (gs *GameServer) handleConnection(w http.ResponseWriter, r *http.Request) {
 
 		switch actionMessage["action"] {
 		case "moveUp":
-			player.positionY -= 30
+			player.positionY -= 70
 			if player.positionY < 0 {
 				player.positionY = 0
 			}
 		case "moveDown":
-			player.positionY += 30
+			player.positionY += 70
 			if player.positionY > 500 {
 				player.positionY = 500
 			}
-		case "stopMove":
-			// Handle stopping player movement
 		}
 
 		// Broadcast updated player positions to all clients
@@ -170,6 +207,9 @@ func (gs *GameServer) serializeGameState() []byte {
 
 	gameState["ballX"] = gs.ball.X
 	gameState["ballY"] = gs.ball.Y
+
+	gameState["score1"] = gs.scoreOne
+	gameState["score2"] = gs.scoreTwo
 
 	jsonData, err := json.Marshal(gameState)
 	if err != nil {
@@ -195,9 +235,11 @@ func main() {
 		ball: Ball{
 			X:         400,
 			Y:         300,
-			VelocityX: 5,
-			VelocityY: 5,
+			VelocityX: getRandomSpeed(3, 4),
+			VelocityY: getRandomSpeed(3, 4),
 		},
+		scoreOne: 0,
+		scoreTwo: 0,
 	}
 
 	go gs.run()

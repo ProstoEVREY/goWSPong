@@ -8,38 +8,63 @@
         body {
             background-color: black;
         }
+        @font-face {
+            font-family: "DOTMATRI";
+            src: url("DOTMATRI.TTF") format("truetype");
+        }
         canvas {
             border: 3px solid #FFF;
             display: block;
             margin: 20px auto;
         }
         .header{
+            font-family: DOTMATRI;
             display: flex;
             justify-content: center;
             color: #FFFFFF;
         }
-        .score1 {
-            margin-left: 100px;
-            display: inline;
+        .player1 {
+            font-family: DOTMATRI;
+            margin-left: 50px;
             color: #FFFFFF;
         }
-        .score2 {
-            margin-right: 100px;
-            margin-left: 70%;
-            display: inline;
-            justify-content: flex-end;
+        .player2 {
+            font-family: DOTMATRI;
+            margin-right: 50px;
             color: #FFFFFF;
         }
+        .waiting {
+            font-family: DOTMATRI;
+            display: inline;
+            justify-content: center;
+            color: #FFFFFF;
+        }
+        .notifiers {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
     </style>
 </head>
 <body>
 <div>
     <h1 class="header">Websocket Pong</h1>
-    <h1 class="score1">Score: </h1>
-    <h1 class="score2">Score: </h1>
 </div>
 
 <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+<div class="notifiers">
+<h1 id="player1" class="player1">
+    Player 1 not connected.
+</h1>
+<h1 id="waiting" class="waiting">
+    Waiting for players.
+</h1>
+<h1 id="player2" class="player2">
+    Player 2 not connected.
+</h1>
+</div>
 
 <script>
     let playerOne = {
@@ -72,8 +97,54 @@
 
         ctx.fillStyle = 'white';
 
+        let playerInfoOne = document.getElementById("player1")
+        let playerInfoTwo = document.getElementById("player2")
+        let waiting = document.getElementById("waiting")
+
+        if(!data.player1Y || !data.player2Y) {
+            waiting.textContent = "Waiting for players."
+        }
+        else {
+            waiting.textContent = '';
+        }
+
+        if (data.player1Y) {
+            playerInfoOne.textContent = "Player 1 connected!";
+        }
+
+        if (data.player2Y) {
+            playerInfoTwo.textContent = "Player 2 connected!";
+        }
+
+        var scoreOne;
+        var scoreTwo;
+
+        if(data.score1){
+            scoreOne = data.score1;
+        }
+        else {
+            scoreOne = 0;
+        }
+        if(data.score2){
+            scoreTwo = data.score2;
+        }
+        else {
+            scoreTwo = 0;
+        }
+
         // Clear the canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        ctx.font = "72px DOTMATRI"
+
+        ctx.fillText(scoreOne.toString(), canvas.width / 2 - 70, 70)
+        ctx.fillText(scoreTwo.toString(), canvas.width / 2 + 50, 70)
+
+        console.log(canvas.width)
+        console.log(canvas.width / 2)
+
+        drawDashedLine(canvas.width / 2, 10, canvas.height, 20, ctx)
+
         if(data.player1Y > 0 && data.player1Y < canvas.height - 100 ) {
             ctx.fillRect(playerOne.x, data.player1Y, playerOne.width, playerOne.height);  // Left paddle
         }
@@ -94,12 +165,27 @@
             ctx.fillRect(playerTwo.x, 500, playerTwo.width, playerTwo.height);
         }
 
+
+            drawBall(data.ballX, data.ballY, ctx)
+    });
+
+    function drawBall(X,Y,ctx) {
         ctx.beginPath();
-        ctx.arc(data.ballX, data.ballY, 10, 0, 2 * Math.PI);
+        ctx.arc(X, Y, 10, 0, 2 * Math.PI);
         ctx.fillStyle = '#FFF';
         ctx.fill();
         ctx.closePath();
-    });
+    }
+
+    function drawDashedLine(x, y, length, dashLength, ctx) {
+        ctx.beginPath();
+        ctx.setLineDash([dashLength, dashLength]);
+        ctx.strokeStyle = "#FFF"
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, y + length);
+        ctx.stroke();
+        ctx.setLineDash([]); // Reset line dash to default (solid line)
+    }
 
     socket.addEventListener('close', (event) => {
         console.log('WebSocket connection closed:', event);
