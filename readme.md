@@ -6,5 +6,5 @@
 
 Available at: https://wspongclient.onrender.com/
 
-![telegram-cloud-photo-size-2-5192943399253168732-y.jpg](..%2F..%2FLibrary%2FGroup%20Containers%2F6N38VWS5BX.ru.keepcoder.Telegram%2Fstable%2Faccount-5330290578951173415%2Fpostbox%2Fmedia%2Ftelegram-cloud-photo-size-2-5192943399253168732-y.jpg)
+
 
