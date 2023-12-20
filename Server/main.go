@@ -136,6 +136,19 @@ func (gs *GameServer) checkPaddleCollision() {
 
 }
 
+func (gs *GameServer) resetGame() {
+	gs.ball.X = 400
+	gs.ball.Y = 300
+	gs.ball.VelocityX = rand.Intn(2)*2 - 1 // Randomize direction (-1 or 1)
+	gs.ball.VelocityY = rand.Intn(2)*2 - 1 // Randomize direction (-1 or 1)
+	gs.scoreOne = 0
+	gs.scoreTwo = 0
+
+	for _, player := range gs.players {
+		player.positionY = 250
+	}
+}
+
 func (gs *GameServer) handleConnection(w http.ResponseWriter, r *http.Request) {
 	conn, err := gs.upgrader.Upgrade(w, r, nil)
 	if err != nil {
@@ -154,6 +167,7 @@ func (gs *GameServer) handleConnection(w http.ResponseWriter, r *http.Request) {
 	} else {
 		index = 1
 		log.Println("Player 2 connected.")
+		gs.resetGame()
 	}
 
 	gs.mutex.Lock()
