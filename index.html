@@ -85,7 +85,7 @@
     ctx.fillRect(playerOne.x, playerOne.y,playerOne.width, playerOne.height);
     ctx.fillRect(playerTwo.x, playerTwo.y, playerTwo.width, playerTwo.height);
 
-    const socket = new WebSocket('wss://wspongserver.onrender.com');
+    const socket = new WebSocket('wss://wspongserver.onrender.com/ws');
 
     socket.addEventListener('open', (event) => {
         console.log('WebSocket connection opened:', event);
