@@ -9,3 +9,19 @@ Available at: https://wspongclient.onrender.com/
 
 ![telegram-cloud-photo-size-2-5192943399253168755-y](https://github.com/ProstoEVREY/goWSPong/assets/81341652/d1f44231-1ab5-4d25-840b-fcf2189f66d3)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+You should notice noticable lag - that is OK, because a free tier service is used. This project is purely for display.
+
