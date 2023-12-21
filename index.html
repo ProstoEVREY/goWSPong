@@ -80,12 +80,15 @@
         height:100
     }
 
+    let pong = new Audio("PONG.mp3")
+    let score = new Audio("SCORE.mp3")
+
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
     ctx.fillRect(playerOne.x, playerOne.y,playerOne.width, playerOne.height);
     ctx.fillRect(playerTwo.x, playerTwo.y, playerTwo.width, playerTwo.height);
 
-    const socket = new WebSocket('wss://wspongserver.onrender.com/ws');
+   const socket = new WebSocket('wss://wspongserver.onrender.com/ws');
 
     socket.addEventListener('open', (event) => {
         console.log('WebSocket connection opened:', event);
@@ -93,7 +96,6 @@
 
     socket.addEventListener('message', (event) => {
         const data = JSON.parse(event.data);
-        console.log('Received message from server:', data);
 
         ctx.fillStyle = 'white';
 
@@ -140,10 +142,14 @@
         ctx.fillText(scoreOne.toString(), canvas.width / 2 - 70, 70)
         ctx.fillText(scoreTwo.toString(), canvas.width / 2 + 50, 70)
 
-        console.log(canvas.width)
-        console.log(canvas.width / 2)
-
         drawDashedLine(canvas.width / 2, 10, canvas.height, 20, ctx)
+
+        if(data.audio == 1) {
+            pong.play()
+        }
+        else if(data.audio == 2) {
+            score.play()
+        }
 
         if(data.player1Y > 0 && data.player1Y < canvas.height - 100 ) {
             ctx.fillRect(playerOne.x, data.player1Y, playerOne.width, playerOne.height);  // Left paddle

@@ -30,6 +30,7 @@ type GameServer struct {
 	ball         Ball
 	scoreOne     int
 	scoreTwo     int
+	playSound    string
 }
 
 type Ball struct {
@@ -100,8 +101,10 @@ func (gs *GameServer) Replay(player int) {
 	gs.ball.Y = getRandomheight(50, 550)
 	if player == 0 {
 		gs.scoreOne += 1
+		gs.playSound = "score"
 	} else {
 		gs.scoreTwo += 1
+		gs.playSound = "score"
 	}
 }
 
@@ -119,11 +122,13 @@ func (gs *GameServer) checkPaddleCollision() {
 
 		if (gs.ball.X-10 <= 35 || gs.ball.X+10 >= gs.canvasWidth-35) && gs.ball.Y >= player.positionY && gs.ball.Y <= player.positionY+100 {
 			gs.ball.VelocityX = -gs.ball.VelocityX
+			gs.playSound = "pong"
 		}
 	}
 
 	if gs.ball.Y-10 <= 0 || gs.ball.Y+10 >= gs.canvasHeight {
 		gs.ball.VelocityY = -gs.ball.VelocityY
+		gs.playSound = "pong"
 	}
 
 	if gs.ball.X-10 <= 0 {
@@ -139,8 +144,6 @@ func (gs *GameServer) checkPaddleCollision() {
 func (gs *GameServer) resetGame() {
 	gs.ball.X = 400
 	gs.ball.Y = 300
-	gs.ball.VelocityX = rand.Intn(2)*2 - 1 // Randomize direction (-1 or 1)
-	gs.ball.VelocityY = rand.Intn(2)*2 - 1 // Randomize direction (-1 or 1)
 	gs.scoreOne = 0
 	gs.scoreTwo = 0
 
@@ -225,6 +228,16 @@ func (gs *GameServer) serializeGameState() []byte {
 	gameState["score1"] = gs.scoreOne
 	gameState["score2"] = gs.scoreTwo
 
+	if gs.playSound == "score" {
+		gameState["audio"] = 2
+		gs.playSound = "none"
+	} else if gs.playSound == "pong" {
+		gameState["audio"] = 1
+		gs.playSound = "none"
+	} else {
+		gameState["audio"] = 0
+	}
+
 	jsonData, err := json.Marshal(gameState)
 	if err != nil {
 		log.Println("Error encoding JSON:", err)
@@ -252,8 +265,9 @@ func main() {
 			VelocityX: getRandomSpeed(3, 4),
 			VelocityY: getRandomSpeed(3, 4),
 		},
-		scoreOne: 0,
-		scoreTwo: 0,
+		scoreOne:  0,
+		scoreTwo:  0,
+		playSound: "none",
 	}
 
 	go gs.run()
